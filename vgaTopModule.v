@@ -11,6 +11,7 @@
 
 module vgaTopMod (
   input  CLK, // clock (pcf)
+  input  RX,
   output VGA_HS,
   output VGA_VS,
   output LED1,
@@ -32,61 +33,110 @@ module vgaTopMod (
   wire [9:0] w_y_pos;
   wire w_hSync;
   wire w_vSync;
+  wire [7:0] w_key_press;
+  wire w_slow_clk;
+  wire [9:0] w_p1_y;
+  wire [9:0] w_p2_y;
 
   // Init wires to connect modules to pins
-  wire [2:0] w_red;
-  wire [2:0] w_green;
-  wire [2:0] w_blue;
+  wire [2:0] w1_red;
+  wire [2:0] w1_green;
+  wire [2:0] w1_blue;
+  wire [2:0] w2_red;
+  wire [2:0] w2_green;
+  wire [2:0] w2_blue;
 
-
+  // Set Up stuff 
+  // ##################################################
   vgaSyncPorches singals(
     .i_CLK  (CLK),
     .o_HSync(w_hSync),
     .o_VSync(w_vSync),
     .o_x_pos(w_x_pos),
     .o_y_pos(w_y_pos),
-);
+  );
 
-  // vgaPattern patterns(
-  //   .i_CLK  (CLK),
-  //   .i_hSync(w_hSync),
-  //   .i_vSync(w_vSync),
-  //   .i_x_pos(w_x_pos),
-  //   .i_y_pos(w_y_pos),
-  //   .o_red  (w_red), 
-  //   .o_green(w_green),
-  //   .o_blue (w_blue),
-  //   .o_hSync(VGA_HS),
-  //   .o_vSync(VGA_VS),
-  // );
+  UartReceive uart(
+      .i_CLK(CLK),
+      .i_Rx_Series(RX),
+      .o_DataValid(),
+      .o_Rx_Byte(w_key_press),
+  );
 
-  reg [9:0] r_rect_x = 10;
-  reg [9:0] r_rect_y = 100;
+  slowCLK #(.period(833333)) 
+    gameEngine (
+    .i_CLK(CLK),
+    .o_CLK(w_slow_clk),
+  );
 
-  vgaRectangle paddleOne(
+  // ##################################################
+
+
+  // Paddle #1
+  // ##################################################
+  paddleBehavior # (.UP(119), .DOWN(115), .SPEED(7)) 
+    paddleOneBehavior (
+    .i_CLK(w_slow_clk),
+    .i_key_byte(w_key_press),
+    .o_y_pos(w_p1_y),
+  );
+
+  vgaRectangle #(.X_POS(10)) 
+    paddleOneDisplay(
     .i_CLK(CLK),
     .i_hSync(w_hSync),
     .i_vSync(w_vSync),
     .i_display_x_pos(w_x_pos),
     .i_display_y_pos(w_y_pos),
-    .i_rect_x_pos(r_rect_x),
-    .i_rect_y_pos(r_rect_y),
-    .o_red(w_red),       
-    .o_green(w_green),     
-    .o_blue(w_blue),      
+    .i_rect_y_pos(w_p1_y),
+    .o_red(w1_red),       
+    .o_green(w1_green),     
+    .o_blue(w1_blue),      
     .o_hSync(VGA_HS),   
     .o_vSync(VGA_VS),
   );
+  // ##################################################
+
+
+  // Paddle #2
+  // ##################################################
+  paddleBehavior # (.UP(105), .DOWN(107), .SPEED(7)) 
+    paddleTwoBehavior (
+    .i_CLK(w_slow_clk),
+    .i_key_byte(w_key_press),
+    .o_y_pos(w_p2_y),
+  );
+
+  vgaRectangle #(.X_POS(615)) 
+    paddleTwoDisplay(
+    .i_CLK(CLK),
+    .i_hSync(w_hSync),
+    .i_vSync(w_vSync),
+    .i_display_x_pos(w_x_pos),
+    .i_display_y_pos(w_y_pos),
+    .i_rect_y_pos(w_p2_y),
+    .o_red(w2_red),       
+    .o_green(w2_green),     
+    .o_blue(w2_blue),      
+    .o_hSync(),   
+    .o_vSync(),
+  );
+  // ##################################################
+
 
   // Assign Wires to pins
-  assign VGA_R0 = w_red[0];
-  assign VGA_R1 = w_red[1];
-  assign VGA_R2 = w_red[2];
-  assign VGA_G0 = w_green[0];
-  assign VGA_G1 = w_green[1];
-  assign VGA_G2 = w_green[2];
-  assign VGA_B0 = w_blue[0];
-  assign VGA_B1 = w_blue[1];
-  assign VGA_B2 = w_blue[2];
+  assign LED1   = w_key_press[3];
+  assign LED2   = w_key_press[2];
+  assign LED3   = w_key_press[1];
+  assign LED4   = w_key_press[0];
+  assign VGA_R0 = w2_red[0]   || w1_red[0];
+  assign VGA_R1 = w2_red[1]   || w1_red[1];
+  assign VGA_R2 = w2_red[2]   || w1_red[2];
+  assign VGA_G0 = w2_green[0] || w1_green[0];
+  assign VGA_G1 = w2_green[1] || w1_green[1];
+  assign VGA_G2 = w2_green[2] || w1_green[2];
+  assign VGA_B0 = w2_blue[0]  || w1_blue[0];
+  assign VGA_B1 = w2_blue[1]  || w1_blue[1];
+  assign VGA_B2 = w2_blue[2]  || w1_blue[2];
 
 endmodule 

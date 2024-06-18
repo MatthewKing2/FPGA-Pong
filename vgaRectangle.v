@@ -3,13 +3,13 @@
 
 module vgaRectangle #(
     parameter           HEIGHT  = 100,
-    parameter           WIDTH   = 15)(
+    parameter           WIDTH   = 15,
+    parameter           X_POS   = 10)(
     input   wire        i_CLK,
     input   wire        i_hSync,
     input   wire        i_vSync,
     input   wire [9:0]  i_display_x_pos,
     input   wire [9:0]  i_display_y_pos,
-    input   wire [9:0]  i_rect_x_pos,
     input   wire [9:0]  i_rect_y_pos,
     output  reg  [2:0]  o_red,       
     output  reg  [2:0]  o_green,     
@@ -29,7 +29,7 @@ module vgaRectangle #(
         // Draw Pattern when one screen 
         else begin
             // If inside the rectangle, white
-            if((i_rect_x_pos < i_display_x_pos) && (i_display_x_pos < i_rect_x_pos + WIDTH) 
+            if((X_POS < i_display_x_pos) && (i_display_x_pos < X_POS + WIDTH) 
             && (i_rect_y_pos < i_display_y_pos) && (i_display_y_pos < i_rect_y_pos + HEIGHT))
             begin
                 o_red   <= 3'b111;

@@ -2,8 +2,7 @@
 // Slow clk signal @ period perameter (in clk cycles)
 
 module slowCLK #( 
-    parameter period = 2500000)
-    (
+    parameter       period = 2500000)(
     input   wire    i_CLK,
     output  reg     o_CLK,);
 
