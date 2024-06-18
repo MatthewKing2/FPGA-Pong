@@ -47,16 +47,34 @@ module vgaTopMod (
     .o_y_pos(w_y_pos),
 );
 
-  vgaPattern patterns(
-    .i_CLK  (CLK),
+  // vgaPattern patterns(
+  //   .i_CLK  (CLK),
+  //   .i_hSync(w_hSync),
+  //   .i_vSync(w_vSync),
+  //   .i_x_pos(w_x_pos),
+  //   .i_y_pos(w_y_pos),
+  //   .o_red  (w_red), 
+  //   .o_green(w_green),
+  //   .o_blue (w_blue),
+  //   .o_hSync(VGA_HS),
+  //   .o_vSync(VGA_VS),
+  // );
+
+  reg [9:0] r_rect_x = 10;
+  reg [9:0] r_rect_y = 100;
+
+  vgaRectangle paddleOne(
+    .i_CLK(CLK),
     .i_hSync(w_hSync),
     .i_vSync(w_vSync),
-    .i_x_pos(w_x_pos),
-    .i_y_pos(w_y_pos),
-    .o_red  (w_red), 
-    .o_green(w_green),
-    .o_blue (w_blue),
-    .o_hSync(VGA_HS),
+    .i_display_x_pos(w_x_pos),
+    .i_display_y_pos(w_y_pos),
+    .i_rect_x_pos(r_rect_x),
+    .i_rect_y_pos(r_rect_y),
+    .o_red(w_red),       
+    .o_green(w_green),     
+    .o_blue(w_blue),      
+    .o_hSync(VGA_HS),   
     .o_vSync(VGA_VS),
   );
 
