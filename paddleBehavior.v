@@ -6,7 +6,7 @@ module paddleBehavior #(
     parameter           DOWN    = 115,   // s
     parameter           SPEED   = 5,
     parameter           HEIGHT  = 100,
-    parameter           START_Y = 300)(
+    parameter           START_Y = (480 - HEIGHT)/2)(
     input   wire        i_CLK,
     input   wire [7:0]  i_key_byte,
     output  wire [9:0]  o_y_pos);  

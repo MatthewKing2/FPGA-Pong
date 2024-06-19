@@ -79,7 +79,7 @@ module vgaTopMod (
 
   // The Ball
   // ##################################################
-  ballBehavior ball(
+  ballBehavior #(.SPEED(5)) ball(
     .i_CLK(w_slow_clk),
     .i_key_byte(w_key_press),
     .i_p1_y_pos(w_p1_y),

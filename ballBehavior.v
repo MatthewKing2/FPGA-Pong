@@ -32,58 +32,71 @@ module ballBehavior #(
     reg [9:0] r_y_pos = ballStartY; 
     reg       r_deltaX_sign = 0;   // 0 = Right, 1 = Left
     reg       r_deltaY_sign = 0;   // 0 = Up, 1 = Down
-    reg [1:0] r_gameStart = 0;
-    reg [1:0] r_collieded = 0; 
-    reg       r_gameReset = 0;
+    reg [1:0] r_gameStart   = 0;
+    reg [1:0] r_collieded_Y = 0; 
+    reg [1:0] r_collieded_X = 0; 
+    reg       r_gameReset   = 0;
+
+    // Have to avoid underflow when paddle is at top of screen
+    wire [9:0] w_p1_top_collsion;
+    wire [9:0] w_p2_top_collsion;
+    assign w_p1_top_collsion = (i_p1_y_pos<BALL_HEIGHT) ? 0 : i_p1_y_pos - BALL_HEIGHT;
+    assign w_p2_top_collsion = (i_p2_y_pos<BALL_HEIGHT) ? 0 : i_p2_y_pos - BALL_HEIGHT;
+        // Top should = i_p1_y_pos - BALL_HEIGHT but this can cause underflow when
+        // p1y is < BALL_HEIGHT
+
 
     // Handle Colliding with Walls and Paddles
     always @( posedge i_CLK ) begin
-        if(r_collieded == 0) begin
+        if(r_collieded_Y == 0) begin
             // Top and Bottom
             if((r_y_pos + BALL_HEIGHT >= lowerBound) || (r_y_pos <= upperBound)) begin
                 r_deltaY_sign <= ~r_deltaY_sign;
-                r_collieded <= 1;
+                r_collieded_Y <= 1;
             end
+        end
+        else 
+            r_collieded_Y <= r_collieded_Y + 1;
+
+        if(r_collieded_X == 0) begin 
             // Left Paddle (Player 1)
             if((r_x_pos <= P1_X_POS+PADDLE_WIDTH) && 
-                    (r_y_pos >= i_p1_y_pos + BALL_HEIGHT ) && 
+                    (r_y_pos >= w_p1_top_collsion) && 
                     (r_y_pos <= i_p1_y_pos + PADDLE_HEIGHT)) begin
                 r_deltaX_sign <= ~r_deltaX_sign;
-                r_collieded <= 1;
+                r_collieded_X <= 1;
             end
             // Right Paddle (Player 2)
             else if((r_x_pos >= P2_X_POS-BALL_WIDTH ) && 
-                    (r_y_pos >= i_p2_y_pos + BALL_HEIGHT ) && 
+                    (r_y_pos >= w_p2_top_collsion) && 
                     (r_y_pos <= i_p2_y_pos + PADDLE_HEIGHT)) begin
                 r_deltaX_sign <= ~r_deltaX_sign;
-                r_collieded <= 1;
-            end
-            // Left Wall
-            else if((r_x_pos < leftBound) && r_gameReset == 0) begin
-                o_p1_scored <= 1;
-                r_gameReset <= 1;
-            end
-            // Right Wall
-            else if((r_x_pos + BALL_WIDTH > rightBound) && r_gameReset == 0) begin
-                o_p2_scored <= 1;
-                r_gameReset <= 1;
-            end
-            else begin 
-                o_p1_scored <= 0;
-                o_p2_scored <= 0;
-                r_gameReset <= 0;   // Flags that means move normally
+                r_collieded_X <= 1;
             end
         end
-        // Wait 2 cycles after a collision before being able to collid again
-        else if(r_collieded == 1)
-            r_collieded <= 2;
-        else
-            r_collieded <= 0;
+        else 
+            r_collieded_X <= r_collieded_X + 1;
+
+        // Left Wall
+        if((r_x_pos < leftBound) && r_gameReset == 0) begin
+            o_p1_scored <= 1;
+            r_gameReset <= 1;
+        end
+        // Right Wall
+        else if((r_x_pos + BALL_WIDTH > rightBound) && r_gameReset == 0) begin
+            o_p2_scored <= 1;
+            r_gameReset <= 1;
+        end
+        else begin 
+            o_p1_scored <= 0;
+            o_p2_scored <= 0;
+            r_gameReset <= 0;   // Flags that means move normally
+        end
     end
     
     // Move the ball (handles game reset movment)
     always @( posedge i_CLK ) begin 
-        if(r_gameReset == 0) begin
+        if(r_gameReset == 0 && r_gameStart) begin
             if(r_deltaX_sign == 0)
                 r_x_pos <= r_x_pos + SPEED;
             else
