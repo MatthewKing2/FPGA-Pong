@@ -50,6 +50,9 @@ module vgaTopMod (
   wire [2:0] w3_red;
   wire [2:0] w3_green;
   wire [2:0] w3_blue;
+  wire [2:0] w4_red;
+  wire [2:0] w4_green;
+  wire [2:0] w4_blue;
 
   // Set Up stuff 
   // ##################################################
@@ -162,19 +165,35 @@ module vgaTopMod (
   // ##################################################
 
 
+  // Dottled Line 
+  // ##################################################
+  vagDottledLine dottledLine(
+      .i_CLK(CLK),
+      .i_hSync(w_hSync),
+      .i_vSync(w_vSync),
+      .i_display_x_pos(w_x_pos),
+      .i_display_y_pos(w_y_pos),
+      .o_red(w4_red),       
+      .o_green(w4_green),     
+      .o_blue(w4_blue),      
+      .o_hSync(),   
+      .o_vSync(),
+  );  
+  // ##################################################
+
   // Assign Wires to pins
   assign LED1   = w_key_press[3];
   assign LED2   = w_key_press[2];
   assign LED3   = w_key_press[1];
   assign LED4   = w_key_press[0];
-  assign VGA_R0 = w1_red[0]   || w2_red[0]   || w3_red[0];
-  assign VGA_R1 = w1_red[1]   || w2_red[1]   || w3_red[1];
-  assign VGA_R2 = w1_red[2]   || w2_red[2]   || w3_red[2];
-  assign VGA_G0 = w1_green[0] || w2_green[0] || w3_green[0];
-  assign VGA_G1 = w1_green[1] || w2_green[1] || w3_green[1];
-  assign VGA_G2 = w1_green[2] || w2_green[2] || w3_green[2];
-  assign VGA_B0 = w1_blue[0]  || w2_blue[0]  || w3_blue[0];
-  assign VGA_B1 = w1_blue[1]  || w2_blue[1]  || w3_blue[1];
-  assign VGA_B2 = w1_blue[2]  || w2_blue[2]  || w3_blue[2];
+  assign VGA_R0 = w1_red[0]   || w2_red[0]   || w3_red[0]    || w4_red[0];
+  assign VGA_R1 = w1_red[1]   || w2_red[1]   || w3_red[1]    || w4_red[1];
+  assign VGA_R2 = w1_red[2]   || w2_red[2]   || w3_red[2]    || w4_red[2];
+  assign VGA_G0 = w1_green[0] || w2_green[0] || w3_green[0]  || w4_green[0];
+  assign VGA_G1 = w1_green[1] || w2_green[1] || w3_green[1]  || w4_green[1];
+  assign VGA_G2 = w1_green[2] || w2_green[2] || w3_green[2]  || w4_green[2];
+  assign VGA_B0 = w1_blue[0]  || w2_blue[0]  || w3_blue[0]   || w4_blue[0];
+  assign VGA_B1 = w1_blue[1]  || w2_blue[1]  || w3_blue[1]   || w4_blue[1];
+  assign VGA_B2 = w1_blue[2]  || w2_blue[2]  || w3_blue[2]   || w4_blue[2];
 
 endmodule 
