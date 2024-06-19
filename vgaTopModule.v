@@ -37,6 +37,8 @@ module vgaTopMod (
   wire w_slow_clk;
   wire [9:0] w_p1_y;
   wire [9:0] w_p2_y;
+  wire [9:0] w_ball_x;
+  wire [9:0] w_ball_y;
 
   // Init wires to connect modules to pins
   wire [2:0] w1_red;
@@ -45,6 +47,9 @@ module vgaTopMod (
   wire [2:0] w2_red;
   wire [2:0] w2_green;
   wire [2:0] w2_blue;
+  wire [2:0] w3_red;
+  wire [2:0] w3_green;
+  wire [2:0] w3_blue;
 
   // Set Up stuff 
   // ##################################################
@@ -72,6 +77,37 @@ module vgaTopMod (
   // ##################################################
 
 
+  // The Ball
+  // ##################################################
+  ballBehavior ball(
+    .i_CLK(w_slow_clk),
+    .i_key_byte(w_key_press),
+    .i_p1_y_pos(w_p1_y),
+    .i_p2_y_pos(w_p2_y),
+    .o_ball_x(w_ball_x),
+    .o_ball_y(w_ball_y),
+    .o_p1_scored(),
+    .o_p2_scored(),
+  );  
+
+  vgaRectangle #(.HEIGHT(20), .WIDTH(20)) 
+    ballDisplay(
+    .i_CLK(CLK),
+    .i_hSync(w_hSync),
+    .i_vSync(w_vSync),
+    .i_display_x_pos(w_x_pos),
+    .i_display_y_pos(w_y_pos),
+    .i_rect_x_pos(w_ball_x),
+    .i_rect_y_pos(w_ball_y),
+    .o_red(w3_red),       
+    .o_green(w3_green),     
+    .o_blue(w3_blue),      
+    .o_hSync(),   
+    .o_vSync(),
+  );
+  // ##################################################
+
+
   // Paddle #1
   // ##################################################
   paddleBehavior # (.UP(119), .DOWN(115), .SPEED(7)) 
@@ -80,14 +116,15 @@ module vgaTopMod (
     .i_key_byte(w_key_press),
     .o_y_pos(w_p1_y),
   );
-
-  vgaRectangle #(.X_POS(10)) 
-    paddleOneDisplay(
+  
+  reg [9:0] r_p1_x_pos = 10;
+  vgaRectangle paddleOneDisplay(
     .i_CLK(CLK),
     .i_hSync(w_hSync),
     .i_vSync(w_vSync),
     .i_display_x_pos(w_x_pos),
     .i_display_y_pos(w_y_pos),
+    .i_rect_x_pos(r_p1_x_pos),
     .i_rect_y_pos(w_p1_y),
     .o_red(w1_red),       
     .o_green(w1_green),     
@@ -107,13 +144,14 @@ module vgaTopMod (
     .o_y_pos(w_p2_y),
   );
 
-  vgaRectangle #(.X_POS(615)) 
-    paddleTwoDisplay(
+  reg [9:0] r_p2_x_pos = 615;
+  vgaRectangle paddleTwoDisplay(
     .i_CLK(CLK),
     .i_hSync(w_hSync),
     .i_vSync(w_vSync),
     .i_display_x_pos(w_x_pos),
     .i_display_y_pos(w_y_pos),
+    .i_rect_x_pos(r_p2_x_pos),
     .i_rect_y_pos(w_p2_y),
     .o_red(w2_red),       
     .o_green(w2_green),     
@@ -129,14 +167,14 @@ module vgaTopMod (
   assign LED2   = w_key_press[2];
   assign LED3   = w_key_press[1];
   assign LED4   = w_key_press[0];
-  assign VGA_R0 = w2_red[0]   || w1_red[0];
-  assign VGA_R1 = w2_red[1]   || w1_red[1];
-  assign VGA_R2 = w2_red[2]   || w1_red[2];
-  assign VGA_G0 = w2_green[0] || w1_green[0];
-  assign VGA_G1 = w2_green[1] || w1_green[1];
-  assign VGA_G2 = w2_green[2] || w1_green[2];
-  assign VGA_B0 = w2_blue[0]  || w1_blue[0];
-  assign VGA_B1 = w2_blue[1]  || w1_blue[1];
-  assign VGA_B2 = w2_blue[2]  || w1_blue[2];
+  assign VGA_R0 = w1_red[0]   || w2_red[0]   || w3_red[0];
+  assign VGA_R1 = w1_red[1]   || w2_red[1]   || w3_red[1];
+  assign VGA_R2 = w1_red[2]   || w2_red[2]   || w3_red[2];
+  assign VGA_G0 = w1_green[0] || w2_green[0] || w3_green[0];
+  assign VGA_G1 = w1_green[1] || w2_green[1] || w3_green[1];
+  assign VGA_G2 = w1_green[2] || w2_green[2] || w3_green[2];
+  assign VGA_B0 = w1_blue[0]  || w2_blue[0]  || w3_blue[0];
+  assign VGA_B1 = w1_blue[1]  || w2_blue[1]  || w3_blue[1];
+  assign VGA_B2 = w1_blue[2]  || w2_blue[2]  || w3_blue[2];
 
 endmodule 
