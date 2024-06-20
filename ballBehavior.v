@@ -4,7 +4,8 @@
 module ballBehavior #(
     parameter           START           = 103,  // g key
     parameter           RESTART         = 98,   // b key
-    parameter           SPEED           = 5,
+    parameter           START_SPEED     = 5,
+    parameter           MAX_SPEED       = 15,
     parameter           BALL_HEIGHT     = 20,
     parameter           BALL_WIDTH      = 20,
     parameter           P1_X_POS        = 10,
@@ -36,6 +37,9 @@ module ballBehavior #(
     reg [1:0] r_collieded_Y = 0; 
     reg [1:0] r_collieded_X = 0; 
     reg       r_gameReset   = 0;
+    reg [4:0] r_ballSpeed   = START_SPEED;  // Max = 32
+    reg [4:0] r_number_hits = 0;            // Number of hits dictates ball speed
+    reg       r_speed_updated = 0;          // Flag, 0=F, 1=T
 
     // Have to avoid underflow when paddle is at top of screen
     wire [9:0] w_p1_top_collsion;
@@ -74,8 +78,17 @@ module ballBehavior #(
                 r_collieded_X <= 1;
             end
         end
+        // After X collision, wait 3 cycles & inc ball speed
         else 
             r_collieded_X <= r_collieded_X + 1;
+            if(r_collieded_X == 1 && r_number_hits < 32) begin
+                r_number_hits <= r_number_hits + 1;
+                r_speed_updated <= 0;
+            end
+            else if(r_gameReset)
+                r_number_hits <= 0;
+            else
+                r_speed_updated <= 1;
 
         // Left Wall
         if((r_x_pos < leftBound) && r_gameReset == 0) begin
@@ -97,18 +110,24 @@ module ballBehavior #(
     // Move the ball (handles game reset movment)
     always @( posedge i_CLK ) begin 
         if(r_gameReset == 0 && r_gameStart) begin
+            // Move the ball
             if(r_deltaX_sign == 0)
-                r_x_pos <= r_x_pos + SPEED;
+                r_x_pos <= r_x_pos + r_ballSpeed;
             else
-                r_x_pos <= r_x_pos - SPEED;
+                r_x_pos <= r_x_pos - r_ballSpeed;
             if(r_deltaY_sign == 1)
-                r_y_pos <= r_y_pos + SPEED;
+                r_y_pos <= r_y_pos + r_ballSpeed;
             else
-                r_y_pos <= r_y_pos - SPEED;
+                r_y_pos <= r_y_pos - r_ballSpeed;
+            // Change its speed 
+            if((r_number_hits == 5 || r_number_hits == 15) && (r_speed_updated == 0)) begin
+                r_ballSpeed <= r_ballSpeed + 5;
+            end
         end
         else begin 
             r_x_pos <= ballStartX;
             r_y_pos <= ballStartY;
+            r_ballSpeed <= START_SPEED;
         end
     end
 
