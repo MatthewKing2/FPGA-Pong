@@ -93,7 +93,7 @@ module vgaTopMod (
     .o_p2_scored(),
   );  
 
-  vgaRectangle #(.HEIGHT(20), .WIDTH(20)) 
+  vgaImage #(.HEIGHT(20), .WIDTH(20)) 
     ballDisplay(
     .i_CLK(CLK),
     .i_hSync(w_hSync),
