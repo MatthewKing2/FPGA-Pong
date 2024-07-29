@@ -82,7 +82,8 @@ module vgaTopMod (
 
   // The Ball
   // ##################################################
-  ballBehavior ball(
+  ballBehavior #(.BALL_HEIGHT(40), .BALL_WIDTH(40)) 
+    ball(
     .i_CLK(w_slow_clk),
     .i_key_byte(w_key_press),
     .i_p1_y_pos(w_p1_y),
@@ -93,7 +94,7 @@ module vgaTopMod (
     .o_p2_scored(),
   );  
 
-  vgaImage #(.HEIGHT(20), .WIDTH(20)) 
+  vgaImage #(.HEIGHT(40), .WIDTH(40)) 
     ballDisplay(
     .i_CLK(CLK),
     .i_hSync(w_hSync),

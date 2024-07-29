@@ -2,8 +2,8 @@
 // Module draws an image (using Block RAM) at X,Y with H,W 
 
 module vgaImage #(
-    parameter           HEIGHT  = 20,
-    parameter           WIDTH   = 20)(
+    parameter           HEIGHT  = 40,
+    parameter           WIDTH   = 40)(
     input   wire        i_CLK,
     input   wire        i_hSync,
     input   wire        i_vSync,
@@ -19,8 +19,8 @@ module vgaImage #(
 
 
     // Parameters
-    parameter       BusSize     = 9;    // Bits
-    parameter       NumElements = 400; 
+    parameter       BusSize     = 11;    // Bits    // was 9
+    parameter       NumElements = 1600;         // was 400
     parameter       DataSize    = 8;    // Bits
 
     // Local Regs / Wires
