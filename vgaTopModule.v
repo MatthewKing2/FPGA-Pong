@@ -82,7 +82,7 @@ module vgaTopMod (
 
   // The Ball
   // ##################################################
-  ballBehavior #(.BALL_HEIGHT(40), .BALL_WIDTH(40)) 
+  ballBehavior #(.BALL_HEIGHT(40), .BALL_WIDTH(40), .START_SPEED(5))
     ball(
     .i_CLK(w_slow_clk),
     .i_key_byte(w_key_press),
