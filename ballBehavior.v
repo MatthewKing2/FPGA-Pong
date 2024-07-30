@@ -1,5 +1,5 @@
 
-// Module Acts as a ball in Pong 
+// Module models ball behavior for Pong
 
 module ballBehavior #(
     parameter           START           = 103,  // g key
@@ -21,7 +21,7 @@ module ballBehavior #(
     output  reg         o_p1_scored,
     output  reg         o_p2_scored);  
 
-    // Must keep track of previous location (ensure dont go out of range)
+    // Parameters define playable area and ball's starting position
     parameter buffer = 10;                  // Defines buffer around edge of screen
     parameter upperBound = 0+buffer;
     parameter lowerBound = 480-buffer;
@@ -29,6 +29,8 @@ module ballBehavior #(
     parameter leftBound  = 0+buffer;
     parameter ballStartX = (640/2) - (BALL_WIDTH/2);
     parameter ballStartY = (480/2) - (BALL_HEIGHT/2);
+
+    // Local regs track balls position, momentum, and speed
     reg [9:0] r_x_pos = ballStartX;
     reg [9:0] r_y_pos = ballStartY; 
     reg       r_deltaX_sign = 0;            // 0 = Right,   1 = Left
@@ -36,21 +38,22 @@ module ballBehavior #(
     reg [4:0] r_ballSpeed   = START_SPEED;  // Max = 32
     reg [4:0] r_number_hits = 0;            // Number of hits dictates ball speed
 
-    // Ensure Have to avoid underflow when paddle is at top of screen
+    // When determining if the ball collided with a paddle, "i_p1_y_pos - BALL_HEIGHT"
+    // is needed. However, if i_p1_y_pos < BALL_HEIGHT, underflow will occur from the subtraction
+    // The bellow wire is used in place of this computation. It avoids underflow by setting to 0
     wire [9:0] w_p1_top_collsion;
     wire [9:0] w_p2_top_collsion;
     assign w_p1_top_collsion = (i_p1_y_pos<BALL_HEIGHT) ? 0 : i_p1_y_pos - BALL_HEIGHT;
     assign w_p2_top_collsion = (i_p2_y_pos<BALL_HEIGHT) ? 0 : i_p2_y_pos - BALL_HEIGHT;
 
     // Set up FSM
-    parameter FSM_IDLE          = 3'b000;
-    parameter FSM_START         = 3'b001;
-    parameter FSM_MOVE          = 3'b010;
-    parameter FSM_P1_SCORED     = 3'b011;
-    parameter FSM_P2_SCORED     = 3'b100;
-    parameter FSM_HIT_PADDLE    = 3'b101;
-    parameter FSM_HIT_TOPBOT    = 3'b110;
-    parameter FSM_UP_SPEED      = 3'b111;
+    parameter FSM_IDLE          = 3'b000;   // Wait for go key (g)
+    parameter FSM_START         = 3'b001;   // Move ball to starting location
+    parameter FSM_MOVE          = 3'b010;   // Move ball and look for collisions or scoring
+    parameter FSM_P1_SCORED     = 3'b011;   // Handle P1 scoring
+    parameter FSM_P2_SCORED     = 3'b100;   // Handle P2 scoring
+    parameter FSM_HIT_PADDLE    = 3'b101;   // Handle ball, paddle collsion
+    parameter FSM_HIT_TOPBOT    = 3'b110;   // Handle ball, top or bottom (of screen) collision
     reg [2:0] r_CurrentState = FSM_IDLE;
 
     // Main Logic 
@@ -59,27 +62,36 @@ module ballBehavior #(
             // ########################################
             // Wait for G key to be pressed
             FSM_IDLE: begin
+                // Handle Manual Game Reset
                 if(i_key_byte == START)
                     r_CurrentState <= FSM_START;
                 else
                     r_CurrentState <= FSM_IDLE;
+
+                // Reset starting position and momentum (sign)
                 r_x_pos <= ballStartX;
                 r_y_pos <= ballStartY;
-                r_ballSpeed <= START_SPEED;
+                r_deltaX_sign = 0; 
+                r_deltaY_sign = 0; 
             end
             // ########################################
             // Move the ball back to start position 
             FSM_START: begin
+                // Handle Manual Game Reset
                 if(i_key_byte == RESTART)
                     r_CurrentState <= FSM_IDLE;
                 else
                     r_CurrentState <= FSM_MOVE;
+
+                // Reset key variables to cleanly reset game 
+                // Note: x,y sign not included intentially
                 r_x_pos <= ballStartX;
                 r_y_pos <= ballStartY;
+                r_number_hits <= 0; 
                 r_ballSpeed <= START_SPEED;
             end
             // ########################################
-            // Move Unless: P1 Score, P2 Score, Paddle Collide, Top/Bot Collide
+            // Move Unless: Reset, P1 Score, P2 Score, Paddle Collide, Top/Bot Collide
             FSM_MOVE: begin
                 // Handle Manual Game Reset
                 if(i_key_byte == RESTART)
@@ -145,6 +157,7 @@ module ballBehavior #(
             end
             // ########################################
             // Handles special movment needed when ball hits paddle 
+            // Also updates ball's speed (if applicable)
             FSM_HIT_PADDLE: begin
                 // Handle Manual Game Reset
                 if(i_key_byte == RESTART)
@@ -155,12 +168,17 @@ module ballBehavior #(
                 // Flip X momentum, inc num hits
                 r_deltaX_sign <= ~r_deltaX_sign;
                 r_number_hits <= r_number_hits + 1;
+                
+                // Increase ball speed based on number of hits
+                if(r_number_hits == 5 || r_number_hits == 10)  
+                    r_ballSpeed <= r_ballSpeed + START_SPEED;
 
                 // Depending on X sign, move left or right
+                // 2*r_ballSpeed to help ball move further from paddle
                 if(r_deltaX_sign)
-                    r_x_pos <= r_x_pos + r_ballSpeed; 
+                    r_x_pos <= r_x_pos + (2*r_ballSpeed); 
                 else
-                    r_x_pos <= r_x_pos - r_ballSpeed; 
+                    r_x_pos <= r_x_pos - (2*r_ballSpeed); 
 
                 // Move normally in Y
                 if(r_deltaY_sign)
@@ -192,23 +210,11 @@ module ballBehavior #(
                 else
                     r_x_pos <= r_x_pos + r_ballSpeed;
             end
-            // ########################################
-            // Currently not in use
-            FSM_UP_SPEED: begin
-                // Handle Manual Game Reset
-                if(i_key_byte == RESTART)
-                    r_CurrentState <= FSM_IDLE;
-                else 
-                    r_CurrentState <= FSM_MOVE;
-
-                // Increase ball speed based on number of hits
-                if(r_number_hits == 5 || r_number_hits == 15)  
-                    r_ballSpeed <= r_ballSpeed + 5;
-            end
 
         endcase
     end
 
+    // Run balls X,Y pos out of this module, so it can be used downstream
     assign o_ball_y = r_y_pos;
     assign o_ball_x = r_x_pos;
 
